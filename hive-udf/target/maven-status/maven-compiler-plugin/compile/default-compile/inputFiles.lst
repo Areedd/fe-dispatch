@@ -1,0 +1,10 @@
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDAFBitmapAgg.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDAFBitmapUnion.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBase64ToBitmap.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBitmapAnd.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBitmapCount.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBitmapFromString.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBitmapOr.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBitmapToBase64.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBitmapToString.java
+/home/areedd/starrocks/fe/hive-udf/src/main/java/com/starrocks/hive/udf/UDFBitmapXor.java

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main">
+  <property name="ant.python" value="python"/>
+  <mkdir dir="/home/areedd/文档/fe/fe-core/target/generated-sources/proto"/>
+  <exec executable="/usr/lib/jvm/java-latest-openjdk/bin/java">
+    <arg value="-jar"/>
+    <arg value="${settings.localRepository}/com/starrocks/jprotobuf-starrocks/1.0.0/jprotobuf-starrocks-1.0.0-jar-with-dependencies.jar"/>
+    <arg value="--java_out=/home/areedd/文档/fe/fe-core/target/generated-sources/proto"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/proto/lake_types.proto"/>
+  </exec>
+  <exec executable="/usr/lib/jvm/java-latest-openjdk/bin/java">
+    <arg value="-jar"/>
+    <arg value="${settings.localRepository}/com/starrocks/jprotobuf-starrocks/1.0.0/jprotobuf-starrocks-1.0.0-jar-with-dependencies.jar"/>
+    <arg value="--java_out=/home/areedd/文档/fe/fe-core/target/generated-sources/proto"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/proto/internal_service.proto"/>
+  </exec>
+  <exec executable="/usr/lib/jvm/java-latest-openjdk/bin/java">
+    <arg value="-jar"/>
+    <arg value="${settings.localRepository}/com/starrocks/jprotobuf-starrocks/1.0.0/jprotobuf-starrocks-1.0.0-jar-with-dependencies.jar"/>
+    <arg value="--java_out=/home/areedd/文档/fe/fe-core/target/generated-sources/proto"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/proto/types.proto"/>
+  </exec>
+  <exec executable="/usr/lib/jvm/java-latest-openjdk/bin/java">
+    <arg value="-jar"/>
+    <arg value="${settings.localRepository}/com/starrocks/jprotobuf-starrocks/1.0.0/jprotobuf-starrocks-1.0.0-jar-with-dependencies.jar"/>
+    <arg value="--java_out=/home/areedd/文档/fe/fe-core/target/generated-sources/proto"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/proto/tablet_schema.proto"/>
+  </exec>
+  <exec executable="/usr/lib/jvm/java-latest-openjdk/bin/java">
+    <arg value="-jar"/>
+    <arg value="${settings.localRepository}/com/starrocks/jprotobuf-starrocks/1.0.0/jprotobuf-starrocks-1.0.0-jar-with-dependencies.jar"/>
+    <arg value="--java_out=/home/areedd/文档/fe/fe-core/target/generated-sources/proto"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/proto/lake_service.proto"/>
+  </exec>
+  <exec executable="/usr/lib/jvm/java-latest-openjdk/bin/java">
+    <arg value="-jar"/>
+    <arg value="${settings.localRepository}/com/starrocks/jprotobuf-starrocks/1.0.0/jprotobuf-starrocks-1.0.0-jar-with-dependencies.jar"/>
+    <arg value="--java_out=/home/areedd/文档/fe/fe-core/target/generated-sources/proto"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/proto/encryption.proto"/>
+  </exec>
+  <exec executable="${ant.python}">
+    <env value="/usr/lib/jvm/java-latest-openjdk" key="JAVA_HOME"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//build-support/gen_build_version.py"/>
+    <arg value="--java"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//fe/fe-core/target/generated-sources/build"/>
+  </exec>
+  <exec executable="${ant.python}">
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/script/gen_functions.py"/>
+    <arg value="--cpp"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//gensrc/build/gen_cpp"/>
+    <arg value="--java"/>
+    <arg value="/home/areedd/文档/fe/fe-core/../..//fe/fe-core/target/generated-sources/build"/>
+  </exec>
+</target>
+</project>

@@ -1,0 +1,264 @@
+// Copyright 2021-present StarRocks, Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.starrocks.connector.iceberg;
+
+import com.starrocks.catalog.Database;
+import com.starrocks.catalog.IcebergTable;
+import com.starrocks.common.MetaNotFoundException;
+import com.starrocks.connector.ConnectorMetadatRequestContext;
+import com.starrocks.qe.ConnectContext;
+import com.starrocks.qe.SessionVariable;
+import com.starrocks.utframe.UtFrameUtils;
+import mockit.Expectations;
+import mockit.Mocked;
+import mockit.Verifications;
+import org.apache.iceberg.Table;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static com.starrocks.connector.iceberg.IcebergCatalogProperties.HIVE_METASTORE_URIS;
+import static com.starrocks.connector.iceberg.IcebergCatalogProperties.ICEBERG_CATALOG_TYPE;
+
+public class CachingIcebergCatalogTest {
+    private static final String CATALOG_NAME = "iceberg_catalog";
+    public static final IcebergCatalogProperties DEFAULT_CATALOG_PROPERTIES;
+    public static final Map<String, String> DEFAULT_CONFIG = new HashMap<>();
+    public static ConnectContext connectContext;
+
+    static {
+        DEFAULT_CONFIG.put(HIVE_METASTORE_URIS, "thrift://188.122.12.1:8732"); // non-exist ip, prevent to connect local service
+        DEFAULT_CONFIG.put(ICEBERG_CATALOG_TYPE, "hive");
+        DEFAULT_CATALOG_PROPERTIES = new IcebergCatalogProperties(DEFAULT_CONFIG);
+    }
+
+    @BeforeAll
+    public static void beforeClass() throws Exception {
+        connectContext = UtFrameUtils.createDefaultCtx();
+    }
+
+    @Test
+    public void testNormalCreateAndDropDBTable(@Mocked IcebergCatalog icebergCatalog)
+            throws MetaNotFoundException {
+        new Expectations() {
+            {
+                icebergCatalog.createDB(connectContext, "test", (Map<String, String>) any);
+                result = null;
+                minTimes = 0;
+
+                icebergCatalog.dropDB(connectContext, "test");
+                result = null;
+                minTimes = 0;
+
+                icebergCatalog.dropTable(connectContext, "test", "table", anyBoolean);
+                result = true;
+                minTimes = 0;
+            }
+        };
+        CachingIcebergCatalog cachingIcebergCatalog = new CachingIcebergCatalog(CATALOG_NAME, icebergCatalog,
+                DEFAULT_CATALOG_PROPERTIES, Executors.newSingleThreadExecutor());
+        cachingIcebergCatalog.createDB(connectContext, "test", new HashMap<>());
+        cachingIcebergCatalog.dropDB(connectContext, "test");
+        cachingIcebergCatalog.dropTable(connectContext, "test", "table", true);
+        cachingIcebergCatalog.invalidateCache("test", "table");
+        cachingIcebergCatalog.invalidatePartitionCache("test", "table");
+    }
+
+    @Test
+    public void testListPartitionNames(@Mocked IcebergCatalog icebergCatalog, @Mocked Table nativeTable) {
+        new Expectations() {
+            {
+                nativeTable.spec().isUnpartitioned();
+                result = false;
+                minTimes = 0;
+            }
+        };
+        CachingIcebergCatalog cachingIcebergCatalog = new CachingIcebergCatalog(CATALOG_NAME, icebergCatalog,
+                DEFAULT_CATALOG_PROPERTIES, Executors.newSingleThreadExecutor());
+        IcebergTable table =
+                IcebergTable.builder().setCatalogDBName("db").setCatalogTableName("test").setNativeTable(nativeTable).build();
+
+        Assertions.assertFalse(nativeTable.spec().isUnpartitioned());
+        {
+            ConnectorMetadatRequestContext requestContext = new ConnectorMetadatRequestContext();
+            SessionVariable sv = ConnectContext.getSessionVariableOrDefault();
+            sv.setEnableConnectorAsyncListPartitions(true);
+            requestContext.setQueryMVRewrite(true);
+            List<String> res = cachingIcebergCatalog.listPartitionNames(table, requestContext, null);
+            Assertions.assertNull(res);
+        }
+        {
+            ConnectorMetadatRequestContext requestContext = new ConnectorMetadatRequestContext();
+            SessionVariable sv = ConnectContext.getSessionVariableOrDefault();
+            sv.setEnableConnectorAsyncListPartitions(false);
+            requestContext.setQueryMVRewrite(true);
+            List<String> res = cachingIcebergCatalog.listPartitionNames(table, requestContext, null);
+            Assertions.assertEquals(res.size(), 0);
+        }
+    }
+
+    @Test
+    public void testGetDB(@Mocked IcebergCatalog icebergCatalog, @Mocked Database db) {
+        new Expectations() {
+            {
+                icebergCatalog.getDB(connectContext, "test");
+                result = db;
+                minTimes = 1;
+            }
+        };
+        CachingIcebergCatalog cachingIcebergCatalog = new CachingIcebergCatalog(CATALOG_NAME, icebergCatalog,
+                DEFAULT_CATALOG_PROPERTIES, Executors.newSingleThreadExecutor());
+        Assertions.assertEquals(db, cachingIcebergCatalog.getDB(connectContext, "test"));
+        Assertions.assertEquals(db, cachingIcebergCatalog.getDB(connectContext, "test"));
+    }
+
+    @Test
+    public void testGetTable(@Mocked IcebergCatalog icebergCatalog, @Mocked Table nativeTable) {
+        new Expectations() {
+            {
+                icebergCatalog.getTable(connectContext, "test", "table");
+                result = nativeTable;
+                minTimes = 1;
+            }
+        };
+        //test for cache
+        CachingIcebergCatalog cachingIcebergCatalog = new CachingIcebergCatalog(CATALOG_NAME, icebergCatalog,
+                DEFAULT_CATALOG_PROPERTIES, Executors.newSingleThreadExecutor());
+        Assertions.assertEquals(nativeTable, cachingIcebergCatalog.getTable(connectContext, "test", "table"));
+        Assertions.assertEquals(nativeTable, cachingIcebergCatalog.getTable(connectContext, "test", "table"));
+        cachingIcebergCatalog.invalidateCache("test", "table");
+    }
+
+    @Test
+    public void testInvalidateCache(@Mocked IcebergCatalog icebergCatalog, @Mocked Table nativeTable) {
+        new Expectations() {
+            {
+                icebergCatalog.getTable(connectContext, "db1", "tbl1");
+                result = nativeTable;
+                times = 2; // Called twice: once for initial cache, once after invalidation
+            }
+        };
+
+        CachingIcebergCatalog cachingIcebergCatalog = new CachingIcebergCatalog(CATALOG_NAME, icebergCatalog,
+                DEFAULT_CATALOG_PROPERTIES, Executors.newSingleThreadExecutor());
+
+        // First call - populates cache
+        Table t1 = cachingIcebergCatalog.getTable(connectContext, "db1", "tbl1");
+        Assertions.assertEquals(nativeTable, t1);
+
+        // Invalidate cache
+        cachingIcebergCatalog.invalidateCache("db1", "tbl1");
+
+        // Second call - should hit delegate again because cache was invalidated
+        Table t2 = cachingIcebergCatalog.getTable(connectContext, "db1", "tbl1");
+        Assertions.assertEquals(nativeTable, t2);
+    }
+
+    @Test
+    public void testTableCacheEnabled_hitsDelegateOnce(@Mocked IcebergCatalog delegate,
+                                                       @Mocked IcebergCatalogProperties props,
+                                                       @Mocked ConnectContext ctx,
+                                                       @Mocked org.apache.iceberg.Table nativeTable) throws Exception {
+        new Expectations() {
+            {
+                props.isEnableIcebergMetadataCache(); 
+                result = true;
+                props.isEnableIcebergTableCache(); 
+                result = true;
+                props.getIcebergMetaCacheTtlSec(); 
+                result = 24L * 60 * 60;
+                props.getIcebergDataFileCacheMemoryUsageRatio(); 
+                result = 0.0;
+                props.getIcebergDeleteFileCacheMemoryUsageRatio(); 
+                result = 0.0;
+
+                delegate.getTable(ctx, "db1", "t1"); 
+                result = nativeTable; 
+                minTimes = 0;
+            }
+        };
+
+        ExecutorService es = Executors.newFixedThreadPool(5);
+        try {
+            CachingIcebergCatalog catalog =
+                    new CachingIcebergCatalog("iceberg0", delegate, props, es);
+
+            org.apache.iceberg.Table r1 = catalog.getTable(ctx, "db1", "t1");
+            org.apache.iceberg.Table r2 = catalog.getTable(ctx, "db1", "t1");
+
+            org.junit.jupiter.api.Assertions.assertSame(r1, r2);
+
+            new Verifications() {
+                {
+                    delegate.getTable(ctx, "db1", "t1"); 
+                    times = 1;
+                }
+            };
+        } finally {
+            es.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testTableCacheDisabled_hitsDelegateTwice(@Mocked IcebergCatalog delegate,
+                                                         @Mocked IcebergCatalogProperties props,
+                                                         @Mocked ConnectContext ctx,
+                                                         @Mocked org.apache.iceberg.Table nativeTable1,
+                                                         @Mocked org.apache.iceberg.Table nativeTable2) throws Exception {
+        new Expectations() {
+            {
+                props.isEnableIcebergMetadataCache(); 
+                result = true;
+                props.isEnableIcebergTableCache(); 
+                result = false;
+                props.getIcebergMetaCacheTtlSec(); 
+                result = 60;
+                props.getIcebergDataFileCacheMemoryUsageRatio(); 
+                result = 0.0;
+                props.getIcebergDeleteFileCacheMemoryUsageRatio(); 
+                result = 0.0;
+
+                delegate.getTable(ctx, "db1", "t1"); 
+                result = nativeTable1;
+                minTimes = 0;
+            }
+        };
+
+        ExecutorService es = Executors.newFixedThreadPool(5);
+        try {
+            CachingIcebergCatalog catalog =
+                    new CachingIcebergCatalog("iceberg0", delegate, props, es);
+
+            org.apache.iceberg.Table r1 = catalog.getTable(ctx, "db1", "t1");
+            org.apache.iceberg.Table r2 = catalog.getTable(ctx, "db1", "t1");
+
+            new Verifications() {
+                {
+                    delegate.getTable(ctx, "db1", "t1"); 
+                    times = 2;
+                }
+            };
+        } finally {
+            es.shutdownNow();
+        }
+    }
+}
+

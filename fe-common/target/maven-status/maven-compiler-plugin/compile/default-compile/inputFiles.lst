@@ -1,0 +1,8 @@
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/AutoType.java
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/ConstructorReflection.java
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/Deencapsulation.java
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/FieldReflection.java
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/GeneratedClasses.java
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/MethodReflection.java
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/ParameterReflection.java
+/home/areedd/文档/fe/fe-common/src/main/java/com/starrocks/common/jmockit/ThrowOfCheckedException.java

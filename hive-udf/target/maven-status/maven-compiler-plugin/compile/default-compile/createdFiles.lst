@@ -1,0 +1,14 @@
+com/starrocks/hive/udf/UDAFBitmapUnion$BitmapUnionEvaluator$BitmapUnionBuffer.class
+com/starrocks/hive/udf/UDAFBitmapUnion.class
+com/starrocks/hive/udf/UDAFBitmapAgg$BitmapAggEvaluator$BitmapAggBuffer.class
+com/starrocks/hive/udf/UDFBitmapFromString.class
+com/starrocks/hive/udf/UDAFBitmapAgg$BitmapAggEvaluator.class
+com/starrocks/hive/udf/UDAFBitmapUnion$BitmapUnionEvaluator.class
+com/starrocks/hive/udf/UDFBitmapToString.class
+com/starrocks/hive/udf/UDFBitmapOr.class
+com/starrocks/hive/udf/UDFBitmapCount.class
+com/starrocks/hive/udf/UDFBitmapToBase64.class
+com/starrocks/hive/udf/UDFBase64ToBitmap.class
+com/starrocks/hive/udf/UDFBitmapAnd.class
+com/starrocks/hive/udf/UDAFBitmapAgg.class
+com/starrocks/hive/udf/UDFBitmapXor.class
