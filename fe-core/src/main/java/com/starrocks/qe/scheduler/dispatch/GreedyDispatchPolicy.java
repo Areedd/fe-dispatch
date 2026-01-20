@@ -60,7 +60,7 @@ public class GreedyDispatchPolicy implements DispatchPolicy {
                 .thenComparing(Comparator.comparingDouble((FragmentCandidate c) -> c.cost.getPredictedCpuUsagePercent()).reversed()));
 
         for (FragmentCandidate candidate : candidates) {
-            List<Long> selectedBackends;
+            List<Long> selectedBackends = Collections.emptyList();
 
             switch (candidate.context.getDispatchCategory()) {
                 case SCAN:
